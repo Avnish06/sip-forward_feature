@@ -1,0 +1,15 @@
+[
+  {
+    "ip": "20.193.182.13",
+    "port": "5060",
+    "username": "synchrovoxai_new.com",
+    "password": "1kdu9sr0a3w",
+    "provider": "synchrovox_out",
+    "country": "India",
+    "prefix": "0",
+    "caller_id": "00919240292847",
+    "trunk_name": "synchrovox_out_did",
+    "register": true,
+    "answer_webhook_url": "https://api.vocallabs.ai/sip-answer-webhook"
+  }
+]

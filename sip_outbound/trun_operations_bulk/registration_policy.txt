@@ -1,0 +1,2 @@
+1. If only new DID for existing provider/trunk: register = false, provider = provider_id from db
+2. If registration based DID: register = true, provider = provider_id_{DID}

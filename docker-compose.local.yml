@@ -1,0 +1,91 @@
+# Local two-container setup:
+#   1) asterisk      -> Asterisk + MariaDB (embedded) — holds trunks, talks to Tata
+#   2) media-server  -> exposes POST /initiate-call on :8086 to trigger calls
+# Both use host networking, so they reach each other (and the DB) over 127.0.0.1.
+# Reads .env from this directory automatically.
+
+services:
+  asterisk:
+    build:
+      context: ./asterisk
+      dockerfile: Dockerfile
+    container_name: asterisk
+    network_mode: host
+    user: root
+    restart: unless-stopped
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    volumes:
+      - ./asterisk/config:/etc/asterisk
+      - ./asterisk/scripts:/usr/local/scripts
+      - asterisk_db:/var/lib/mysql
+    command: ["bash", "/usr/local/scripts/start-with-db.sh"]
+    healthcheck:
+      test: ["CMD", "mariadb", "-h", "127.0.0.1", "-uasterisk", "-pf3mb0yTw1nkyB@!!69", "asterisk", "-e", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 90s
+
+  media-server:
+    build:
+      context: ./sip_outbound
+    container_name: media-server
+    network_mode: host
+    user: root
+    ulimits:
+      core: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+    cap_add:
+      - SYS_PTRACE
+      - SYS_ADMIN
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - TZ=Asia/Kolkata
+      - WEBHOOK_THREADS=4
+      - UPLOAD_THREADS=4
+      - SERVER_ID=${SERVER_ID:?SERVER_ID must be set}
+      - MARIA_DB_PORT=3306
+      - MARIA_DB_TABLE=asterisk
+      - PUBLIC_IP=${PUBLIC_IP:?PUBLIC_IP must be set}
+      - PRIVATE_IP=0.0.0.0
+      - ASTERISK_IP=${ASTERISK_IP:?ASTERISK_IP must be set}
+      - ASTERISK_PORT=5060
+      # Local bind port for the media-server's own SIP transport. Must differ
+      # from Asterisk's 5060 since both share the host network namespace here.
+      - SIP_PORT=5070
+      - SIP_USERNAME=${SIP_USERNAME:?SIP_USERNAME must be set}
+      - SIP_PASSWORD=${SIP_PASSWORD:?SIP_PASSWORD must be set}
+      - SIP_REALM=asterisk
+      - RTP_PORT_START=4000
+      - RTP_PORT_END=4999
+      - HTTP_PORT=8086
+      - MAX_CONCURRENT_CALLS=2500
+      - LOADBALANCER_ENDPOINT=${LOADBALANCER_ENDPOINT:-http://127.0.0.1:8000}
+      # Rupture/humanId transfer target. Leave empty for production (external
+      # rupture server). For a local test set it to a reachable wss:// stub, e.g.
+      # HUMAN_TRANSFER_WS_URL=wss://<host>:8090/human
+      - HUMAN_TRANSFER_WS_URL=${HUMAN_TRANSFER_WS_URL:-}
+      - SAMPLE_RATE=8000
+      - MARIA_DB_USERNAME=${MARIA_DB_USERNAME:-asterisk}
+      - MARIA_DB_PASS=${MARIA_DB_PASS:?MARIA_DB_PASS must be set}
+      - AWS_REGION=${AWS_REGION:-ap-south-1}
+      - AWS_ACCESS_KEY=${AWS_ACCESS_KEY:-dummy}
+      - AWS_SECRET_KEY=${AWS_SECRET_KEY:-dummy}
+      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME:-dummy.local}
+    volumes:
+      - ./sip_outbound/include:/app/include
+      - ./sip_outbound/src:/app/src
+      - ./cores:/cores
+    restart: unless-stopped
+    depends_on:
+      asterisk:
+        condition: service_healthy
+
+volumes:
+  asterisk_db:

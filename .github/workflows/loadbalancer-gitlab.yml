@@ -1,0 +1,53 @@
+name: load_balancer
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'load_balancer/**'
+      - '.github/workflows/loadbalancer-gitlab.yml'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to GitLab Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: registry.gitlab.com
+          username: ${{ secrets.GITLAB_USERNAME }}
+          password: ${{ secrets.GITLAB_TOKEN }}
+
+      - name: Build, tag, and push Docker image to GitLab
+        env:
+          GITLAB_REGISTRY: registry.gitlab.com
+          GITLAB_PROJECT: ${{ secrets.GITLAB_USERNAME }}/deploy
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $GITLAB_REGISTRY/$GITLAB_PROJECT/loadbalancer:$IMAGE_TAG \
+                       -t $GITLAB_REGISTRY/$GITLAB_PROJECT/loadbalancer:latest \
+                       ./load_balancer
+          docker push $GITLAB_REGISTRY/$GITLAB_PROJECT/loadbalancer:$IMAGE_TAG
+          docker push $GITLAB_REGISTRY/$GITLAB_PROJECT/loadbalancer:latest
+
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - name: Send WhatsApp Deployment Notification
+        env:
+          PUSHER: ${{ github.actor }}
+        run: |
+          curl -X POST "https://whatsappv3.subspace.money/send_from_support" \
+            -H "X-API-Key: vl_b4e17acd3ac65552cebc3e1f6ad51a37a4e73bd5a0fe3f267a9462988a87ded1" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"to\": \"Vocallabs Tech\",
+              \"message\": \"Image created and pushed for SIP Load Balancer ✅ \\nPushed by: $PUSHER\",
+              \"isGroup\": \"Y\",
+              \"mentions\": \"\"
+            }"

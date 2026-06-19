@@ -1,0 +1,1 @@
+{"phone_number":"00919142436879","websocket_url":"wss://host.docker.internal:8090/voice?delay=999&number=00919142436879&mode=number","webhook_url":"http://127.0.0.1:9/x","trunk_name":"synchrovox_out_did","sample_rate":8000}

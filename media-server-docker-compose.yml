@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  sip_outbound:
+    build:
+      context: ./sip_outbound
+    container_name: sip_outbound
+    volumes:
+      - ./sip_outbound/include:/app/include
+      - ./sip_outbound/src:/app/src
+      - ./cores:/cores
+    ulimits:
+      core: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+    cap_add:
+      - SYS_PTRACE
+      - SYS_ADMIN
+    security_opt:
+      - seccomp:unconfined
+    network_mode: host
+    environment:
+      - TZ=Asia/Kolkata
+      - WEBHOOK_THREADS=4
+      - UPLOAD_THREADS=4
+
+      # Identity
+      - SERVER_ID=${SERVER_ID:?SERVER_ID must be set}
+
+      # MariaDB Connection Configuration
+      - MARIA_DB_PORT=3306
+      - MARIA_DB_TABLE=asterisk
+
+      # Network Configuration
+      - PUBLIC_IP=${PUBLIC_IP:?PUBLIC_IP must be set}
+      - PRIVATE_IP=0.0.0.0
+      - ASTERISK_IP=${ASTERISK_IP:?ASTERISK_IP must be set}
+      - ASTERISK_PORT=5060
+
+      # SIP Configuration
+      - SIP_PORT=5060
+      - SIP_USERNAME=${SIP_USERNAME:?SIP_USERNAME must be set}
+      - SIP_PASSWORD=${SIP_PASSWORD:?SIP_PASSWORD must be set}
+      - SIP_REALM=asterisk
+
+      # RTP Configuration
+      - RTP_PORT_START=4000
+      - RTP_PORT_END=4999
+
+      # HTTP API Configuration
+      - HTTP_PORT=8086
+      - MAX_CONCURRENT_CALLS=2500
+
+      # Load Balancer Configuration
+      - LOADBALANCER_ENDPOINT=${LOADBALANCER_ENDPOINT:?LOADBALANCER_ENDPOINT must be set}
+
+      # Media Configuration
+      - SAMPLE_RATE=8000
+
+      # MariaDB app credentials (read by db_manager)
+      - MARIA_DB_USERNAME=${MARIA_DB_USERNAME:-asterisk}
+      - MARIA_DB_PASS=${MARIA_DB_PASS:?MARIA_DB_PASS must be set}
+
+      # AWS S3 (recordings upload)
+      - AWS_REGION=${AWS_REGION:?AWS_REGION must be set}
+      - AWS_ACCESS_KEY=${AWS_ACCESS_KEY:?AWS_ACCESS_KEY must be set}
+      - AWS_SECRET_KEY=${AWS_SECRET_KEY:?AWS_SECRET_KEY must be set}
+      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME:?AWS_BUCKET_NAME must be set}
+    restart: unless-stopped

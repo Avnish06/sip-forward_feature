@@ -1,0 +1,4 @@
+[
+  { "type": "provider", "trunk_name": "mcube_5850" },
+  { "type": "did",      "trunk_name": "mcube_5850", "did": "8071845850" }
+]

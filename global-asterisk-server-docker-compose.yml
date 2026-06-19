@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  asterisk:
+    build:
+      context: ./asterisk
+      dockerfile: Dockerfile
+    container_name: asterisk
+    restart: always
+    network_mode: host
+
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+
+    environment:
+      - MYSQL_HOST=127.0.0.1
+      - MYSQL_USER=asterisk
+      - MYSQL_PASSWORD=f3mb0yTw1nkyB@!!69
+      - MYSQL_DATABASE=asterisk
+    volumes:
+      - ./asterisk/config:/etc/asterisk
+      - ./asterisk/scripts:/usr/local/scripts
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["/usr/local/scripts/wait-for-db.sh", "127.0.0.1", "asterisk", "f3mb0yTw1nkyB@!!69", "asterisk", "/usr/sbin/asterisk", "-f"]
+
+  db:
+    image: mariadb:latest
+    container_name: asterisk_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: N1gg3rB@!!69
+      MYSQL_DATABASE: asterisk
+      MYSQL_USER: asterisk
+      MYSQL_PASSWORD: f3mb0yTw1nkyB@!!69
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./asterisk/config/asterisk.sql:/docker-entrypoint-initdb.d/1-schema.sql
+      - ./asterisk/config/pjsip_config.sql:/docker-entrypoint-initdb.d/2-data.sql
+    healthcheck:
+      test: ["CMD", "mariadb", "-h", "localhost", "-u", "root", "-pN1gg3rB@!!69", "-e", "SELECT 1", "asterisk"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    ports:
+      - "3306:3306"
+    networks:
+      - sip_network
+
+  loadbalancer:
+    build:
+      context: ./load_balancer
+      dockerfile: ./Dockerfile
+    container_name: loadbalancer
+    network_mode: host
+    environment:
+      - APP_PORT=8000
+      - REDIS_HOST=127.0.0.1
+      - REDIS_PORT=6385
+      - REDIS_DB=0
+      - REDIS_CONNECTION_POOL_SIZE=10
+      - REDIS_MIN_IDLE_CONNS=5
+      - HEALTH_CHECK_TIMEOUT=5
+      - LOG_LEVEL=info
+    depends_on:
+      - redis-sip
+    restart: unless-stopped
+  
+  redis-sip:
+    image: redis:alpine
+    container_name: redis-sip
+    restart: unless-stopped
+    ports:
+      - "6385:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - sip_network
+
+volumes:
+  db_data:
+  redis_data:
+
+networks:
+  sip_network:
+    driver: bridge

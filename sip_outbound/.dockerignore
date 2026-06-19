@@ -1,0 +1,10 @@
+.env
+.env.*
+*.o
+src/*.o
+sip_outbound
+.git
+.gitignore
+.vscode
+.idea
+cores/

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Servers Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/public/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <span class="header-eyebrow">Load Balancer</span>
+                <h1>Media Servers</h1>
+            </div>
+            <button class="refresh-btn" id="refresh-btn" onclick="manualRefresh()" title="Refresh now">
+                <svg class="refresh-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 12a8 8 0 0 1 14.93-4H15a1 1 0 1 0 0 2h5a1 1 0 0 0 1-1V4a1 1 0 1 0-2 0v2.16A10 10 0 1 0 22 12a1 1 0 1 0-2 0 8 8 0 0 1-16 0z" fill="currentColor"/>
+                </svg>
+                <svg class="countdown-ring" viewBox="0 0 36 36">
+                    <circle class="ring-track" cx="18" cy="18" r="16"/>
+                    <circle class="ring-fill" id="ring-fill" cx="18" cy="18" r="16"/>
+                </svg>
+            </button>
+        </header>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Name</th>
+                        <th>Address</th>
+                        <th>Max Calls</th>
+                        <th>Current</th>
+                        <th>Available</th>
+                        <th>Answered</th>
+                        <th>Inbound</th>
+                        <th>Outbound</th>
+                    </tr>
+                </thead>
+                <tbody id="servers-body">
+                    <tr class="loading-row">
+                        <td colspan="9">
+                            <span class="loading-dots">
+                                <span></span><span></span><span></span>
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <footer>
+            <span id="last-updated"></span>
+            <span class="poll-label">Auto-refresh every 5s</span>
+        </footer>
+    </div>
+
+    <!-- Side Panel -->
+    <div class="overlay" id="overlay" onclick="closePanel()"></div>
+    <div class="panel" id="panel">
+        <div class="panel-header">
+            <h2 id="panel-title">Server Details</h2>
+            <button class="close-btn" onclick="closePanel()">&times;</button>
+        </div>
+        <div class="panel-content" id="panel-content"></div>
+    </div>
+
+    <script src="/public/script.js"></script>
+</body>
+</html>
